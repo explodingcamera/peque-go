@@ -4,3 +4,9 @@ task:
   update-mdb:
     cmds:
       - "git subtree pull --prefix messagedb https://github.com/message-db/message-db.git master --squash"
+  dev:
+    cmds:
+      - docker-compose up -d
+  dev-down:
+    cmds:
+      - docker-compose down
