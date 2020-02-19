@@ -1,0 +1,6 @@
+version: '2'
+
+task:
+  update-mdb:
+    cmds:
+      - "git subtree pull --prefix messagedb https://github.com/message-db/message-db.git master --squash"
