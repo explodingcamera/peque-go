@@ -1,7 +1,12 @@
 package postgres
 
 import (
+	"fmt"
 	"log"
+	"strconv"
+
+	// load postgrs driver
+	_ "github.com/lib/pq"
 
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
@@ -9,12 +14,69 @@ import (
 
 // Service ...
 type Service struct {
-	db *sqlx.DB
+	db      *sqlx.DB
+	Options Options
 }
 
-// Init initializes a new Service
-func Init() *Service {
-	db, err := sqlx.Connect("postgres", "user=foo dbname=bar sslmode=disable")
+// Options ...
+type Options struct {
+	DatabaseName           string // default peque
+	DatabaseUser           string // default peque
+	DatabasePassword       string // default peque
+	DatabaseHost           string // default localhost
+	DatabasePort           int64  // default 5432
+	DatabaseConnectTimeout int64  // default 0
+
+	DatabaseSSLMode     string
+	DatabaseSSLCert     string
+	DatabaseSSLKey      string
+	DatabaseSSLRootCert string
+}
+
+// Connect initializes a new Service
+func Connect(options Options) (*Service, error) {
+
+	var connectString string
+
+	if options.DatabaseName == "" {
+		options.DatabaseName = "peque"
+	}
+	connectString += "dbname=" + options.DatabaseName
+
+	if options.DatabaseUser == "" {
+		options.DatabaseUser = "peque"
+	}
+	connectString += "user=" + options.DatabaseUser
+
+	if options.DatabaseHost != "" {
+		connectString += "host=" + options.DatabaseHost
+	}
+
+	if options.DatabasePort != 0 {
+		connectString += "port=" + strconv.FormatInt(options.DatabasePort, 10)
+	}
+
+	if options.DatabaseSSLMode != "" {
+		connectString += "sslmode=" + options.DatabaseSSLMode
+	}
+
+	if options.DatabaseConnectTimeout != 0 {
+		connectString += "connect_timeout=" + strconv.FormatInt(options.DatabaseConnectTimeout, 10)
+	}
+
+	if options.DatabaseSSLCert != "" {
+		connectString += "sslcert=" + options.DatabaseSSLCert
+	}
+
+	if options.DatabaseSSLKey != "" {
+		connectString += "sslkey=" + options.DatabaseSSLKey
+	}
+
+	if options.DatabaseSSLRootCert != "" {
+		connectString += "sslrootcert=" + options.DatabaseSSLRootCert
+	}
+
+	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -23,7 +85,11 @@ func Init() *Service {
 		db: db,
 	}
 
-	return &service
+	roleName := "test"
+	role, err := service.db.Exec("SELECT 1 FROM pg_roles WHERE rolname=?", roleName)
+	fmt.Println(role, err)
+
+	return &service, nil
 }
 
 // WriteMessage writes a new message to a stream
@@ -43,6 +109,7 @@ func (s Service) WriteMessage(data string, streamID string) error {
 func (s Service) Install() error {
 	prefix := "messagedb/database/"
 	loadFiles := []string{
+
 		// Main install
 		"roles/message-store.sql",
 		"schema/message-store.sql",

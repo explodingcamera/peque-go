@@ -3,12 +3,18 @@
 version: '2'
 
 tasks:
+  default:
+    cmds:
+      - task --list
   update-mdb:
+    desc: pull newest changes from messagedb
     cmds:
       - "git subtree pull --prefix backends/postgres/messagedb https://github.com/message-db/message-db.git master --squash"
   dev:
+    desc: start dev dependencies
     cmds:
       - docker-compose up -d
   dev-down:
+    desc: stop dev dependencies
     cmds:
-      - docker-compose down
+      - docker-compose down 
